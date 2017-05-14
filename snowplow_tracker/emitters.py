@@ -23,7 +23,6 @@ import requests
 import json
 import threading
 import celery
-from celery import Celery
 import redis
 import logging
 from contracts import contract, new_contract
@@ -47,16 +46,6 @@ new_contract("method", lambda x: x == "get" or x == "post")
 new_contract("function", lambda x: hasattr(x, "__call__"))
 
 new_contract("redis", lambda x: isinstance(x, (redis.Redis, redis.StrictRedis)))
-
-try:
-    # Check whether a custom Celery configuration module named "snowplow_celery_config" exists
-    import snowplow_celery_config
-    app = Celery()
-    app.config_from_object(snowplow_celery_config)
-
-except ImportError:
-    # Otherwise configure Celery with default settings
-    app = Celery("Snowplow", broker="redis://guest@localhost//")
 
 
 class Emitter(object):
@@ -146,7 +135,6 @@ class Emitter(object):
             if len(self.buffer) >= self.buffer_size:
                 self.flush()
 
-    @app.task(name="Flush")
     def flush(self):
         """
             Sends all events in the buffer to the collector.
