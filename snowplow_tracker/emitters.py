@@ -24,7 +24,6 @@ import json
 import threading
 import celery
 from celery import Celery
-from celery.contrib.methods import task
 import redis
 import logging
 from contracts import contract, new_contract
@@ -76,7 +75,7 @@ class Emitter(object):
                                 1) The number of events which were successfully sent
                                 2) If method is "post": The unsent data in string form;
                                    If method is "get":  An array of dictionaries corresponding to the unsent events' payloads
-            :type  on_failure:  function | None            
+            :type  on_failure:  function | None
         """
         self.endpoint = Emitter.as_collector_uri(endpoint, protocol, port, method)
 
@@ -104,9 +103,9 @@ class Emitter(object):
             :param endpoint:  The raw endpoint provided by the user
             :type  endpoint:  string
             :param protocol:  The protocol to use - http or https
-            :type  protocol:  protocol            
+            :type  protocol:  protocol
             :param port:      The collector port to connect to
-            :type  port:      int | None            
+            :type  port:      int | None
             :rtype:           string
         """
         if method == "get":
@@ -136,7 +135,7 @@ class Emitter(object):
             if len(self.buffer) >= self.buffer_size:
                 self.flush()
 
-    @task(name="Flush")
+    @app.task(name="Flush")
     def flush(self):
         """
             Sends all events in the buffer to the collector.
@@ -165,7 +164,7 @@ class Emitter(object):
         """
         logger.info("Sending GET request to %s..." % self.endpoint)
         logger.debug("Payload: %s" % payload)
-        r = requests.get(self.endpoint, params=payload)        
+        r = requests.get(self.endpoint, params=payload)
         getattr(logger, "info" if self.is_good_status_code(r.status_code) else "warn")("GET request finished with status code: " + str(r.status_code))
         return r
 
